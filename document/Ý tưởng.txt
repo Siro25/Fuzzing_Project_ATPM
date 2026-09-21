@@ -1,0 +1,57 @@
+Ý tưởng:
+-Tên đề tài: Đánh giá hiệu năng Fuzzing (Black-box vs White-box) trên Trình phân tích gói tin mạng (Custom Network Protocol). 
+-Mục tiêu hệ thống: Xây dựng một module C nhỏ gọn (khoảng 100–500 dòng mã) mô phỏng parser nhận dữ liệu từ mạng.  
+-Phạm vi rào cản (Attack Surface): Gói tin đầu vào yêu cầu phải khớp 4 byte "Magic Number" (0xDEADBEEF) ở Header và vượt qua phép toán XOR Checksum ở cuối gói tin.  
+
+-Lỗ hổng cài cắm (3 loại):
+  1. CWE-120 (Buffer Copy without Checking Size): 
+     - memcpy() không kiểm tra data_length <= MAX_PAYLOAD_SIZE (64)
+     - Dẫn đến Stack Buffer Overflow khi data_length > 64
+     
+  2. CWE-134 (Format String Vulnerability):
+     - Hàm log_error_packet() dùng printf(payload) trực tiếp
+     - Không dùng printf("%s", payload)
+     - Khi payload chứa %x, %s, %n sẽ gây lỗi format string
+     
+  3. CWE-125 (Out-of-bounds Read):
+     - Hàm calculate_checksum() đọc tràn buffer
+     - Vòng lặp không kiểm tra i < actual_buffer_size
+     - Khi data_length khai báo > buffer thực tế → đọc vùng nhớ ngoài ranh giới
+
+-Phương pháp thực hiện: 
+  Black-box Fuzzing: Sinh testcase ngẫu nhiên hoàn toàn, không biết cấu trúc.
+  Kết quả: 99.9% bị chặn tại 2 rào cản → KHÔNG thể trigger 3 lỗ hổng.
+  
+  Gray-box/White-box: Dùng coverage-guided (AFL) hoặc symbolic execution (Z3) 
+  để vượt qua Magic Byte và giải Checksum tự động.
+
+Các Hạng mục Sản phẩm Bắt buộc (Deliverables):
+-Mã nguồn phân phiên bản: 
+  + network_parser_v0.c: File gốc chứa 3 lỗ hổng (CWE-120, CWE-134, CWE-125)
+  + network_parser_v0_harness.c: Harness kết nối fuzzer vào parser
+  + blackbox_fuzzer.py: Script Python tự động fuzzing
+  + Makefile hoặc hướng dẫn biên dịch: README.md, NHIEMVU2_HUONGDAN.md
+
+-Bằng chứng kiểm chứng (Log & Testcase): 
+  + Testcase cụ thể trigger 3 lỗ hổng
+  + Log AddressSanitizer (ASan) hiển thị lỗi tại dòng mã
+  + Log fuzzing cho thấy 99.9% bị chặn
+
+-Bảng đối chiếu định lượng: 
+  + Black-box: 100% blocked (10k iterations), 99.99% blocked (50k iterations)
+  + White-box/Gray-box: Vượt qua rào cản và trigger được lỗi
+  + Thời gian: Black-box cần 273 năm, Gray-box/White-box cần vài phút/giờ
+
+Cấu trúc gói tin mạng:
+[0-3]   sync_word    (4 byte) - 0xDEADBEEF (Magic Byte - rào cản 1)
+[4]     cmd_id       (1 byte) - Mã lệnh
+[5-6]   data_length  (2 byte) - Độ dài payload (có thể > 64 → CWE-120)
+[7-70]  payload      (0-64)   - Dữ liệu (có thể chứa %x → CWE-134)
+[71]    checksum     (1 byte) - XOR checksum (rào cản 2)
+
+Kết luận:
+Black-box fuzzing HOÀN TOÀN THẤT BẠI với target này do:
+1. Rào cản Magic Byte: xác suất 1/(2^32) = 0.000000023%
+2. Rào cản Checksum: cần biết thuật toán XOR
+3. Không thể trigger được 3 lỗ hổng: CWE-120, CWE-134, CWE-125
+→ Cần Gray-box (AFL) hoặc White-box (libFuzzer + symbolic execution) để thành công.
