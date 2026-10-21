@@ -1,0 +1,8 @@
+File 'D:/Pro/ATPM/network_parser_v0.c'
+Lines executed:63.70% of 146
+Branches executed:73.08% of 52
+Taken at least once:57.69% of 52
+Calls executed:60.56% of 71
+Creating 'network_parser_v0.c.gcov'
+
+Lines executed:63.70% of 146

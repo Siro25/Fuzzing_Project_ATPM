@@ -1,0 +1,78 @@
+{
+  "seed": 42,
+  "rounds": 3,
+  "iterations_per_round": 200,
+  "total_cases": 600,
+  "timeout_seconds": 1.0,
+  "mutation_mode": "loop",
+  "elapsed_seconds": 21.69,
+  "modeled_state_coverage": {
+    "covered": [
+      "checksum_invalid",
+      "empty_file",
+      "length_mismatch",
+      "oversized_payload",
+      "parse_ok",
+      "sync_mismatch",
+      "too_short"
+    ],
+    "missing": [],
+    "percent": 100.0
+  },
+  "counts": {
+    "empty_file": 3,
+    "normal": 597,
+    "too_short": 3,
+    "sync_mismatch": 359,
+    "length_mismatch": 58,
+    "parse_ok": 18,
+    "checksum_invalid": 120,
+    "oversized_payload": 39,
+    "hang": 3
+  },
+  "source_coverage": {
+    "gcov_exit_code": 0,
+    "gcov_raw": "File 'D:/Pro/ATPM/network_parser_v0.c'\nLines executed:63.70% of 146\nBranches executed:73.08% of 52\nTaken at least once:57.69% of 52\nCalls executed:60.56% of 71\nCreating 'network_parser_v0.c.gcov'\n\nLines executed:63.70% of 146\n",
+    "lines_executed_percent": 63.7,
+    "branches_executed_percent": 73.08,
+    "branches_taken_percent": 57.69,
+    "branch_total": 52
+  },
+  "symbolic_cost": {
+    "independent_branches": 7,
+    "independent_solver_calls_O_n": 7,
+    "nested_depth": 5,
+    "nested_solver_calls_O_2n": 32,
+    "speedup_ratio_dict_vs_random": 54975581388.8,
+    "note": "7 independent branches -> O(7) solver calls; 5-depth nested -> O(32) calls; dictionary token 'BEGIN' hits 1.8e10x more often than random."
+  },
+  "findings": [
+    {
+      "case_id": "r03_i0173",
+      "kind": "hang",
+      "state": "oversized_payload",
+      "exit_code": null,
+      "origin": "loop_carry:length",
+      "mode": "loop",
+      "reproducer": "findings\\r03_i0173_hang.bin"
+    },
+    {
+      "case_id": "r03_i0174",
+      "kind": "hang",
+      "state": "oversized_payload",
+      "exit_code": null,
+      "origin": "loop_carry:append",
+      "mode": "loop",
+      "reproducer": "findings\\r03_i0174_hang.bin"
+    },
+    {
+      "case_id": "r03_i0185",
+      "kind": "hang",
+      "state": "checksum_invalid",
+      "exit_code": null,
+      "origin": "loop_carry:length",
+      "mode": "loop",
+      "reproducer": "findings\\r03_i0185_hang.bin"
+    }
+  ]
+}

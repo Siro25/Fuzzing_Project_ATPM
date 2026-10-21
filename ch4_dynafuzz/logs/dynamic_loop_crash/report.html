@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>DynaFuzz Log Analysis</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; margin: 2rem; }
+  h1 { color: #7ee8a2; }
+  h2 { color: #61dafb; margin-top: 2rem; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  th { background: #1e2230; color: #7ee8a2; padding: .6rem 1rem; text-align: left; }
+  td { border-top: 1px solid #2a2d3e; padding: .5rem 1rem; vertical-align: top; }
+  tr:hover td { background: #1a1d2e; }
+  .none { color: #888; font-style: italic; }
+  .tag { color: #ff7eb3; font-weight: bold; }
+  footer { margin-top: 3rem; color: #555; font-size: .8rem; }
+</style>
+</head>
+<body>
+<h1>🧪 Dynamic Fuzzing – Log Analysis Report</h1>
+<p>Generated: 2026-10-20 00:18:00</p>
+<h2>📊 Per-Run Summary</h2>
+<table>
+<thead>
+  <tr><th>Run</th><th>Mode</th><th>Cases</th><th>State cov</th><th>gcov</th><th>Exceptions</th></tr>
+</thead>
+<tbody>
+        <tr>
+          <td>run_20261020_001653_183598</td>
+          <td>loop</td>
+          <td>600</td>
+          <td>100.0%</td>
+          <td>63.7% lines / 57.69% branches taken</td>
+          <td><b>format_string_hit</b>: 94<br><b>hang</b>: 3<br><b>overflow_hit</b>: 3<br><b>loop_carry_crash</b>: 3</td>
+        </tr>
+        <tr>
+          <td>run_20261020_001606_842506</td>
+          <td>all</td>
+          <td>750</td>
+          <td>100.0%</td>
+          <td>63.7% lines / 59.62% branches taken</td>
+          <td><b>format_string_hit</b>: 185<br><b>oversized_accepted</b>: 3</td>
+        </tr>
+        <tr>
+          <td>run_20261020_001440_369155</td>
+          <td>all</td>
+          <td>750</td>
+          <td>100.0%</td>
+          <td>gcov N/A</td>
+          <td><b>format_string_hit</b>: 182<br><b>oversized_accepted</b>: 3</td>
+        </tr>
+        <tr>
+          <td>run_20261020_001256_263382</td>
+          <td>all</td>
+          <td>750</td>
+          <td>100.0%</td>
+          <td>gcov N/A</td>
+          <td><b>format_string_hit</b>: 183<br><b>oversized_accepted</b>: 3</td>
+        </tr>
+        <tr>
+          <td>run_20261020_001135_741808</td>
+          <td>all</td>
+          <td>750</td>
+          <td>100.0%</td>
+          <td>gcov N/A</td>
+          <td><b>format_string_hit</b>: 185<br><b>oversized_accepted</b>: 3</td>
+        </tr>
+        <tr>
+          <td>run_20261019_234846_233690</td>
+          <td>?</td>
+          <td>300</td>
+          <td>100.0%</td>
+          <td>gcov N/A</td>
+          <td><b>format_string_hit</b>: 23<br><b>oversized_accepted</b>: 5</td>
+        </tr></tbody>
+</table>
+
+        <h2>🔴 Loop-Crash Master Log</h2>
+        <p>Total: <b>3</b> crash/hang events</p>
+        <table><thead><tr><th>Exception tag</th><th>Count</th><th>Examples</th></tr></thead>
+        <tbody><tr><td>hang</td><td>3</td><td>r03_i0173, r03_i0174, r03_i0185</td></tr><tr><td>overflow_hit</td><td>3</td><td>r03_i0173, r03_i0174, r03_i0185</td></tr><tr><td>loop_carry_crash</td><td>3</td><td>r03_i0173, r03_i0174, r03_i0185</td></tr></tbody></table>
+        
+<footer>ch4_dynafuzz/analyze_logs.py · ATPM Fuzzing Project</footer>
+</body>
+</html>

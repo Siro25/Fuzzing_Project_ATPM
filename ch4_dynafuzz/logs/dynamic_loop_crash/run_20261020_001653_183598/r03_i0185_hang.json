@@ -1,0 +1,14 @@
+{
+  "case_id": "r03_i0185",
+  "origin": "loop_carry:length",
+  "state": "checksum_invalid",
+  "mode": "loop",
+  "size": 159,
+  "sha256": "f231d9911790bce521a51379e2e71afcf71bb291b6e2a43a8aec2278ff82a8f6",
+  "input_hex": "efbeadde0140004125782541782578f5646e41412573416e41414125786e4141d73f414141000000001c2578414141414141414541414141256e414141455845432570414141414141412525414141a741ed256441414141412500257800b725734141412578257341b54141414141414125700c2ead3a95bbe5ca86ba47d64f2564d0785237fb7f96e8dc74d3454e440f2e1a9336f80d880648e8d8e2d4b8",
+  "kind": "hang",
+  "exit_code": null,
+  "elapsed_ms": 1007.47,
+  "output": "[LOI] Checksum khong hop le: nhan 0x41, can 0x62.\r\n",
+  "reproducer": "findings\\r03_i0185_hang.bin"
+}

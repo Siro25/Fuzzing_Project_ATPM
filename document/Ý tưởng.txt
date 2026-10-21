@@ -30,7 +30,7 @@ Các Hạng mục Sản phẩm Bắt buộc (Deliverables):
   + network_parser_v0.c: File gốc chứa 3 lỗ hổng (CWE-120, CWE-134, CWE-125)
   + network_parser_v0_harness.c: Harness kết nối fuzzer vào parser
   + blackbox_fuzzer.py: Script Python tự động fuzzing
-  + Makefile hoặc hướng dẫn biên dịch: README.md, NHIEMVU2_HUONGDAN.md
+  + Makefile hoặc hướng dẫn biên dịch: README.md, HUONGDAN.md
 
 -Bằng chứng kiểm chứng (Log & Testcase): 
   + Testcase cụ thể trigger 3 lỗ hổng

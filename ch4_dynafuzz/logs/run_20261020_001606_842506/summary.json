@@ -1,0 +1,49 @@
+{
+  "seed": 20261019,
+  "rounds": 5,
+  "iterations_per_round": 150,
+  "total_cases": 750,
+  "timeout_seconds": 1.0,
+  "mutation_mode": "all",
+  "elapsed_seconds": 18.69,
+  "modeled_state_coverage": {
+    "covered": [
+      "checksum_invalid",
+      "empty_file",
+      "length_mismatch",
+      "oversized_payload",
+      "parse_ok",
+      "sync_mismatch",
+      "too_short"
+    ],
+    "missing": [],
+    "percent": 100.0
+  },
+  "counts": {
+    "empty_file": 16,
+    "normal": 750,
+    "too_short": 35,
+    "sync_mismatch": 95,
+    "length_mismatch": 169,
+    "parse_ok": 150,
+    "checksum_invalid": 252,
+    "oversized_payload": 33
+  },
+  "source_coverage": {
+    "gcov_exit_code": 0,
+    "gcov_raw": "File 'D:/Pro/ATPM/network_parser_v0.c'\nLines executed:63.70% of 146\nBranches executed:73.08% of 52\nTaken at least once:59.62% of 52\nCalls executed:60.56% of 71\nCreating 'network_parser_v0.c.gcov'\n\nLines executed:63.70% of 146\n",
+    "lines_executed_percent": 63.7,
+    "branches_executed_percent": 73.08,
+    "branches_taken_percent": 59.62,
+    "branch_total": 52
+  },
+  "symbolic_cost": {
+    "independent_branches": 7,
+    "independent_solver_calls_O_n": 7,
+    "nested_depth": 5,
+    "nested_solver_calls_O_2n": 32,
+    "speedup_ratio_dict_vs_random": 54975581388.8,
+    "note": "7 independent branches -> O(7) solver calls; 5-depth nested -> O(32) calls; dictionary token 'BEGIN' hits 1.8e10x more often than random."
+  },
+  "findings": []
+}
