@@ -1,0 +1,457 @@
+        -:    0:Source:D:/Pro/ATPM/network_parser_v0.c
+        -:    0:Graph:D:\Pro\ATPM\ch4_dynafuzz\logs\run_20261022_232657_154105\coverage/network_parser_v0.gcno
+        -:    0:Data:D:\Pro\ATPM\ch4_dynafuzz\logs\run_20261022_232657_154105\coverage/network_parser_v0.gcda
+        -:    0:Runs:300
+        -:    1:/**
+        -:    2: * Đề tài 4: Dự án Fuzzing - Bóc tách gói tin mạng
+        -:    3: * File: network_parser_v0.c (VULNERABLE VERSION)
+        -:    4: * 
+        -:    5: * LỖ HỔNG:
+        -:    6: * - CWE-120: Buffer Overflow (memcpy không kiểm tra data_length)
+        -:    7: * - CWE-134: Format String (printf(payload) trực tiếp)
+        -:    8: * - CWE-125: Out-of-bounds Read (vòng lặp checksum đọc tràn)
+        -:    9: */
+        -:   10:
+        -:   11:#include <stdio.h>
+        -:   12:#include <stdlib.h>
+        -:   13:#include <string.h>
+        -:   14:#include <stdint.h>
+        -:   15:
+        -:   16:#define SYNC_WORD           0xDEADBEEF  /* Magic Byte - rào cản 1 */
+        -:   17:#define MAX_PAYLOAD_SIZE    64              /* Giới hạn payload */
+        -:   18:#define MIN_PACKET_SIZE     8               /* Header + Checksum tối thiểu */
+        -:   19:
+        -:   20:/* Mã lỗi */
+        -:   21:#define PARSE_OK                 0
+        -:   22:#define ERR_NULL_INPUT          -1
+        -:   23:#define ERR_TOO_SHORT           -2
+        -:   24:#define ERR_SYNC_MISMATCH       -3
+        -:   25:#define ERR_CHECKSUM_INVALID    -4
+        -:   26:#define ERR_LENGTH_MISMATCH     -5
+        -:   27:
+        -:   28:/* Cấu trúc gói tin: sync(4) + cmd(1) + len(2) + payload(64) + checksum(1) */
+        -:   29:#pragma pack(push, 1)
+        -:   30:typedef struct {
+        -:   31:    uint32_t sync_word;
+        -:   32:    uint8_t  cmd_id;
+        -:   33:    uint16_t data_length;
+        -:   34:    uint8_t  payload[MAX_PAYLOAD_SIZE];
+        -:   35:    uint8_t  checksum;
+        -:   36:} NetworkPacket;
+        -:   37:#pragma pack(pop)
+        -:   38:
+        -:   39:/* 
+        -:   40: * CWE-125: Out-of-bounds Read
+        -:   41: * Nếu length > kích thước thực tế của data, vòng lặp sẽ đọc tràn
+        -:   42: */
+function calculate_checksum called 288 returned 100% blocks executed 100%
+      288:   43:static uint8_t calculate_checksum(const uint8_t *data, size_t length)
+        -:   44:{
+      288:   45:    uint8_t csum = 0;
+     5421:   46:    for (size_t i = 0; i < length; i++) {
+branch  0 taken 5133
+branch  1 taken 288 (fallthrough)
+     5133:   47:        csum ^= data[i];  /* BUG: Không kiểm tra i < actual_buffer_size */
+        -:   48:    }
+      288:   49:    return csum;
+        -:   50:}
+        -:   51:
+function print_packet_info called 159 returned 100% blocks executed 100%
+      159:   52:static void print_packet_info(const NetworkPacket *pkt)
+        -:   53:{
+      159:   54:    printf("=== THONG TIN GOI TIN ===\n");
+call    0 returned 159
+      159:   55:    printf("  Sync Word   : 0x%08X\n", pkt->sync_word);
+call    0 returned 159
+      159:   56:    printf("  Command ID  : 0x%02X\n", pkt->cmd_id);
+call    0 returned 159
+      159:   57:    printf("  Data Length : %u byte(s)\n", pkt->data_length);
+call    0 returned 159
+      159:   58:    printf("  Payload     : ");
+call    0 returned 159
+        -:   59:
+      159:   60:    uint16_t print_len = pkt->data_length;
+      159:   61:    if (print_len > MAX_PAYLOAD_SIZE) {
+branch  0 taken 6 (fallthrough)
+branch  1 taken 153
+        6:   62:        print_len = MAX_PAYLOAD_SIZE;
+        -:   63:    }
+     2149:   64:    for (uint16_t i = 0; i < print_len; i++) {
+branch  0 taken 1990
+branch  1 taken 159 (fallthrough)
+     1990:   65:        printf("%02X ", pkt->payload[i]);
+call    0 returned 1990
+        -:   66:    }
+      159:   67:    printf("\n");
+call    0 returned 159
+      159:   68:    printf("  Checksum    : 0x%02X\n", pkt->checksum);
+call    0 returned 159
+      159:   69:    printf("=========================\n");
+call    0 returned 159
+      159:   70:}
+        -:   71:
+        -:   72:/*
+        -:   73: * CWE-134: Format String Vulnerability
+        -:   74: * Log gói tin lỗi - Dùng payload trực tiếp trong printf()
+        -:   75: */
+function log_error_packet called 132 returned 100% blocks executed 100%
+      132:   76:static void log_error_packet(const uint8_t *payload, uint16_t length)
+        -:   77:{
+      132:   78:    printf("[ERROR LOG] Goi tin bi loi, payload: ");
+call    0 returned 132
+        -:   79:    
+        -:   80:    /* BUG: Nếu payload chứa %x, %s, %n sẽ gây lỗi format string */
+        -:   81:    char temp[128];
+      132:   82:    if (length > 0 && length < sizeof(temp) - 1) {
+branch  0 taken 132 (fallthrough)
+branch  1 taken 0
+branch  2 taken 132 (fallthrough)
+branch  3 taken 0
+      132:   83:        memcpy(temp, payload, length);
+      132:   84:        temp[length] = '\0';
+      132:   85:        printf(temp);  /* CWE-134: KHÔNG an toàn! Nên dùng printf("%s", temp) */
+call    0 returned 132
+        -:   86:    }
+      132:   87:    printf("\n");
+call    0 returned 132
+      132:   88:}
+        -:   89:
+        -:   90:/*
+        -:   91: * Hàm parse chính - Chứa 3 lỗ hổng:
+        -:   92: * 1. CWE-120: memcpy không kiểm tra data_len
+        -:   93: * 2. CWE-125: calculate_checksum đọc tràn nếu data_len > raw_length
+        -:   94: * 3. CWE-134: log_error_packet dùng printf(payload)
+        -:   95: */
+function parse_network_packet called 297 returned 100% blocks executed 90%
+      297:   96:int parse_network_packet(const uint8_t *raw_data,
+        -:   97:                         size_t         raw_length,
+        -:   98:                         NetworkPacket *out_pkt)
+        -:   99:{
+      297:  100:    size_t offset = 0;
+        -:  101:
+      297:  102:    if (raw_data == NULL || out_pkt == NULL) {
+branch  0 taken 297 (fallthrough)
+branch  1 taken 0
+branch  2 taken 0 (fallthrough)
+branch  3 taken 297
+    #####:  103:        fprintf(stderr, "[LOI] Con tro dau vao NULL.\n");
+call    0 never executed
+call    1 never executed
+    #####:  104:        return ERR_NULL_INPUT;
+        -:  105:    }
+        -:  106:
+      297:  107:    if (raw_length < MIN_PACKET_SIZE) {
+branch  0 taken 3 (fallthrough)
+branch  1 taken 294
+        3:  108:        fprintf(stderr, "[LOI] Du lieu qua ngan: %zu byte (can >= %d).\n",
+call    0 returned 3
+call    1 returned 3
+        -:  109:                raw_length, MIN_PACKET_SIZE);
+        3:  110:        return ERR_TOO_SHORT;
+        -:  111:    }
+        -:  112:
+        -:  113:    /* Đọc Sync Word - rào cản Magic Byte */
+      294:  114:    uint32_t sync = 0;
+      294:  115:    memcpy(&sync, &raw_data[offset], sizeof(uint32_t));
+      294:  116:    offset += sizeof(uint32_t);
+        -:  117:
+      294:  118:    if (sync != SYNC_WORD) {
+branch  0 taken 3 (fallthrough)
+branch  1 taken 291
+        3:  119:        fprintf(stderr, "[LOI] Sync Word khong khop: 0x%08X (can 0x%08X).\n",
+call    0 returned 3
+call    1 returned 3
+        -:  120:                sync, SYNC_WORD);
+        3:  121:        return ERR_SYNC_MISMATCH;
+        -:  122:    }
+      291:  123:    out_pkt->sync_word = sync;
+        -:  124:
+        -:  125:    /* Đọc Command ID và Data Length */
+      291:  126:    out_pkt->cmd_id = raw_data[offset];
+      291:  127:    offset += sizeof(uint8_t);
+        -:  128:
+      291:  129:    uint16_t data_len = 0;
+      291:  130:    memcpy(&data_len, &raw_data[offset], sizeof(uint16_t));
+      291:  131:    offset += sizeof(uint16_t);
+      291:  132:    out_pkt->data_length = data_len;
+        -:  133:
+        -:  134:    /* Kiểm tra input đủ dài (KHÔNG kiểm tra data_len <= 64) */
+      291:  135:    if (raw_length < offset + (size_t)data_len + 1) {
+branch  0 taken 3 (fallthrough)
+branch  1 taken 288
+        3:  136:        fprintf(stderr, "[LOI] Du lieu khong du: can %zu byte, co %zu byte.\n",
+call    0 returned 3
+        3:  137:                offset + (size_t)data_len + 1, raw_length);
+call    0 returned 3
+        -:  138:        
+        -:  139:        /* CWE-134: Log lỗi với format string vulnerability */
+        3:  140:        if (data_len > 0 && data_len < 64) {
+branch  0 taken 3 (fallthrough)
+branch  1 taken 0
+branch  2 taken 3 (fallthrough)
+branch  3 taken 0
+        3:  141:            log_error_packet(&raw_data[offset], data_len);
+call    0 returned 3
+        -:  142:        }
+        3:  143:        return ERR_LENGTH_MISMATCH;
+        -:  144:    }
+        -:  145:
+        -:  146:    /* 
+        -:  147:     * CWE-120: Buffer Overflow
+        -:  148:     * memcpy không kiểm tra data_len <= MAX_PAYLOAD_SIZE
+        -:  149:     * Nếu data_len > 64 → tràn buffer
+        -:  150:     */
+      288:  151:    memcpy(out_pkt->payload, &raw_data[offset], data_len);
+      288:  152:    offset += data_len;
+        -:  153:
+        -:  154:    /* Đọc và xác minh Checksum - rào cản tính toán */
+      288:  155:    uint8_t received_checksum = raw_data[offset];
+      288:  156:    out_pkt->checksum = received_checksum;
+        -:  157:
+        -:  158:    /*
+        -:  159:     * CWE-125: Out-of-bounds Read
+        -:  160:     * Nếu data_len khai báo > raw_length thực tế,
+        -:  161:     * calculate_checksum sẽ đọc tràn
+        -:  162:     */
+      288:  163:    uint8_t expected_checksum = calculate_checksum(raw_data, offset);
+call    0 returned 288
+        -:  164:
+      288:  165:    if (received_checksum != expected_checksum) {
+branch  0 taken 129 (fallthrough)
+branch  1 taken 159
+      129:  166:        fprintf(stderr,
+call    0 returned 129
+call    1 returned 129
+        -:  167:                "[LOI] Checksum khong hop le: nhan 0x%02X, can 0x%02X.\n",
+        -:  168:                received_checksum, expected_checksum);
+        -:  169:        
+        -:  170:        /* CWE-134: Log với payload có thể chứa format specifier */
+      129:  171:        log_error_packet(out_pkt->payload, data_len);
+call    0 returned 129
+      129:  172:        return ERR_CHECKSUM_INVALID;
+        -:  173:    }
+        -:  174:
+      159:  175:    printf("[OK] Phan tich goi tin thanh cong.\n");
+call    0 returned 159
+      159:  176:    return PARSE_OK;
+        -:  177:}
+        -:  178:
+        -:  179:/* Tạo gói tin hợp lệ cho test */
+function build_valid_packet called 0 returned 0% blocks executed 0%
+    #####:  180:static int build_valid_packet(uint8_t        cmd_id,
+        -:  181:                              const uint8_t *payload,
+        -:  182:                              uint16_t       payload_len,
+        -:  183:                              uint8_t       *out_buf,
+        -:  184:                              size_t         out_buf_size)
+        -:  185:{
+    #####:  186:    size_t total_size = 7 + (size_t)payload_len + 1;
+        -:  187:
+    #####:  188:    if (out_buf == NULL || total_size > out_buf_size) {
+branch  0 never executed (fallthrough)
+branch  1 never executed
+branch  2 never executed (fallthrough)
+branch  3 never executed
+    #####:  189:        fprintf(stderr, "[LOI] Bo dem dau ra khong du.\n");
+call    0 never executed
+call    1 never executed
+    #####:  190:        return -1;
+        -:  191:    }
+        -:  192:
+    #####:  193:    size_t offset = 0;
+        -:  194:
+    #####:  195:    uint32_t sync = SYNC_WORD;
+    #####:  196:    memcpy(&out_buf[offset], &sync, sizeof(uint32_t));
+    #####:  197:    offset += sizeof(uint32_t);
+        -:  198:
+    #####:  199:    out_buf[offset] = cmd_id;
+    #####:  200:    offset += sizeof(uint8_t);
+        -:  201:
+    #####:  202:    memcpy(&out_buf[offset], &payload_len, sizeof(uint16_t));
+    #####:  203:    offset += sizeof(uint16_t);
+        -:  204:
+    #####:  205:    if (payload != NULL && payload_len > 0) {
+branch  0 never executed (fallthrough)
+branch  1 never executed
+branch  2 never executed (fallthrough)
+branch  3 never executed
+    #####:  206:        memcpy(&out_buf[offset], payload, payload_len);
+    #####:  207:        offset += payload_len;
+        -:  208:    }
+        -:  209:
+    #####:  210:    uint8_t csum = calculate_checksum(out_buf, offset);
+call    0 never executed
+    #####:  211:    out_buf[offset] = csum;
+    #####:  212:    offset += 1;
+        -:  213:
+    #####:  214:    return (int)offset;
+        -:  215:}
+        -:  216:
+        -:  217:/*
+        -:  218: * Main - 2 chế độ:
+        -:  219: * 1. Fuzzing: ./parser <input_file>
+        -:  220: * 2. Demo: ./parser (tạo gói tin hợp lệ và parse)
+        -:  221: */
+function main called 300 returned 100% blocks executed 46%
+      300:  222:int main(int argc, char *argv[])
+        -:  223:{
+      300:  224:    printf("=====================================================\n");
+call    0 returned 300
+      300:  225:    printf("  NETWORK PACKET PARSER v0 (VULNERABLE)\n");
+call    0 returned 300
+      300:  226:    printf("  De tai 4 - Fuzzing Project\n");
+call    0 returned 300
+      300:  227:    printf("=====================================================\n\n");
+call    0 returned 300
+        -:  228:
+      300:  229:    if (argc >= 2) {
+branch  0 taken 300 (fallthrough)
+branch  1 taken 0
+        -:  230:        /* Chế độ 1: Đọc từ file (cho fuzzer) */
+      300:  231:        const char *input_file = argv[1];
+      300:  232:        printf("[INFO] Doc du lieu tu file: %s\n", input_file);
+call    0 returned 300
+        -:  233:
+      300:  234:        FILE *fp = fopen(input_file, "rb");
+call    0 returned 300
+      300:  235:        if (fp == NULL) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 300
+    #####:  236:            fprintf(stderr, "[LOI] Khong mo duoc file: %s\n", input_file);
+call    0 never executed
+call    1 never executed
+    #####:  237:            return 1;
+        -:  238:        }
+        -:  239:
+      300:  240:        fseek(fp, 0, SEEK_END);
+call    0 returned 300
+      300:  241:        long file_size = ftell(fp);
+call    0 returned 300
+      300:  242:        fseek(fp, 0, SEEK_SET);
+call    0 returned 300
+        -:  243:
+      300:  244:        if (file_size <= 0 || file_size > 65536) {
+branch  0 taken 297 (fallthrough)
+branch  1 taken 3
+branch  2 taken 0 (fallthrough)
+branch  3 taken 297
+        3:  245:            fprintf(stderr, "[LOI] Kich thuoc file khong hop le: %ld byte.\n",
+call    0 returned 3
+call    1 returned 3
+        -:  246:                    file_size);
+        3:  247:            fclose(fp);
+call    0 returned 3
+        3:  248:            return 1;
+        -:  249:        }
+        -:  250:
+      297:  251:        uint8_t *raw_data = (uint8_t *)malloc((size_t)file_size);
+      297:  252:        if (raw_data == NULL) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 297
+    #####:  253:            fprintf(stderr, "[LOI] Khong cap phat duoc bo nho.\n");
+call    0 never executed
+call    1 never executed
+    #####:  254:            fclose(fp);
+call    0 never executed
+    #####:  255:            return 1;
+        -:  256:        }
+        -:  257:
+      297:  258:        size_t bytes_read = fread(raw_data, 1, (size_t)file_size, fp);
+call    0 returned 297
+      297:  259:        fclose(fp);
+call    0 returned 297
+        -:  260:
+      297:  261:        printf("[INFO] Da doc %zu byte tu file.\n\n", bytes_read);
+call    0 returned 297
+        -:  262:
+        -:  263:        NetworkPacket pkt;
+      297:  264:        memset(&pkt, 0, sizeof(NetworkPacket));
+        -:  265:
+      297:  266:        int result = parse_network_packet(raw_data, bytes_read, &pkt);
+call    0 returned 297
+        -:  267:
+      297:  268:        if (result == PARSE_OK) {
+branch  0 taken 159 (fallthrough)
+branch  1 taken 138
+      159:  269:            print_packet_info(&pkt);
+call    0 returned 159
+        -:  270:        } else {
+      138:  271:            fprintf(stderr, "[INFO] Phan tich that bai, ma loi: %d\n", result);
+call    0 returned 138
+call    1 returned 138
+        -:  272:        }
+        -:  273:
+      297:  274:        free(raw_data);
+      297:  275:        return (result == PARSE_OK) ? 0 : 1;
+        -:  276:
+        -:  277:    } else {
+        -:  278:        /* Chế độ 2: Demo với gói tin hợp lệ */
+    #####:  279:        printf("[INFO] Che do DEMO - tao goi tin hop le.\n\n");
+call    0 never executed
+        -:  280:
+    #####:  281:        const char *sample_data = "HELLO_PHENIKAA";
+    #####:  282:        uint16_t    sample_len  = (uint16_t)strlen(sample_data);
+    #####:  283:        uint8_t     sample_cmd  = 0x01;
+        -:  284:
+        -:  285:        uint8_t raw_buffer[256];
+    #####:  286:        int pkt_size = build_valid_packet(sample_cmd,
+call    0 never executed
+        -:  287:                                          (const uint8_t *)sample_data,
+        -:  288:                                          sample_len,
+        -:  289:                                          raw_buffer,
+        -:  290:                                          sizeof(raw_buffer));
+    #####:  291:        if (pkt_size < 0) {
+branch  0 never executed (fallthrough)
+branch  1 never executed
+    #####:  292:            fprintf(stderr, "[LOI] Khong tao duoc goi tin mau.\n");
+call    0 never executed
+call    1 never executed
+    #####:  293:            return 1;
+        -:  294:        }
+        -:  295:
+    #####:  296:        printf("[INFO] Da tao goi tin mau: %d byte.\n", pkt_size);
+call    0 never executed
+    #####:  297:        printf("[INFO] Hex dump: ");
+call    0 never executed
+    #####:  298:        for (int i = 0; i < pkt_size; i++) {
+branch  0 never executed
+branch  1 never executed (fallthrough)
+    #####:  299:            printf("%02X ", raw_buffer[i]);
+call    0 never executed
+        -:  300:        }
+    #####:  301:        printf("\n\n");
+call    0 never executed
+        -:  302:
+        -:  303:        NetworkPacket pkt;
+    #####:  304:        memset(&pkt, 0, sizeof(NetworkPacket));
+        -:  305:
+    #####:  306:        int result = parse_network_packet(raw_buffer, (size_t)pkt_size, &pkt);
+call    0 never executed
+        -:  307:
+    #####:  308:        if (result == PARSE_OK) {
+branch  0 never executed (fallthrough)
+branch  1 never executed
+    #####:  309:            print_packet_info(&pkt);
+call    0 never executed
+    #####:  310:            printf("\n[OK] Demo thanh cong!\n");
+call    0 never executed
+        -:  311:        } else {
+    #####:  312:            fprintf(stderr, "[LOI] Demo that bai, ma loi: %d\n", result);
+call    0 never executed
+call    1 never executed
+    #####:  313:            return 1;
+        -:  314:        }
+        -:  315:
+    #####:  316:        printf("\n!! CANH BAO !!\n");
+call    0 never executed
+    #####:  317:        printf("Code chua cac lo hong:\n");
+call    0 never executed
+    #####:  318:        printf("- CWE-120: Buffer Overflow (memcpy khong kiem tra)\n");
+call    0 never executed
+    #####:  319:        printf("- CWE-134: Format String (printf(payload))\n");
+call    0 never executed
+    #####:  320:        printf("- CWE-125: Out-of-bounds Read (checksum doc tran)\n");
+call    0 never executed
+        -:  321:
+    #####:  322:        return 0;
+        -:  323:    }
+        -:  324:}
